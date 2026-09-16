@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+
+{% block title %}Traiter la demande{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0"><i class="bi bi-gear"></i> Traiter la demande</h4>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info">
+                    <strong>Utilisateur :</strong> {{ demande.utilisateur.username }}<br>
+                    <strong>Email :</strong> {{ demande.email_contact|default:"-" }}<br>
+                    <strong>Date :</strong> {{ demande.date_demande|date:"d/m/Y H:i" }}<br>
+                    <strong>Message :</strong> {{ demande.message|default:"-" }}
+                </div>
+                
+                <p>Choisissez une action :</p>
+                
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="d-grid gap-2">
+                        <button type="submit" name="action" value="reinitialiser" class="btn btn-success">
+                            <i class="bi bi-key"></i> Réinitialiser le mot de passe (génère un nouveau)
+                        </button>
+                        <button type="submit" name="action" value="rejeter" class="btn btn-danger">
+                            <i class="bi bi-x-circle"></i> Rejeter la demande
+                        </button>
+                        <a href="{% url 'liste_demandes' %}" class="btn btn-secondary">
+                            <i class="bi bi-arrow-left"></i> Annuler
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

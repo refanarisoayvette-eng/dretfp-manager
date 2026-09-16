@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+
+{% block title %}Modifier la salle{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0"><i class="bi bi-pencil"></i> Modifier la salle</h4>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label">Établissement</label>
+                        <input type="text" class="form-control" value="{{ salle.etablissement.nom }}" disabled>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Nom *</label>
+                        <input type="text" name="nom" class="form-control" value="{{ salle.nom }}" required>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Capacité</label>
+                            <input type="number" name="capacite" class="form-control" value="{{ salle.capacite }}">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Type</label>
+                            <input type="text" name="type_salle" class="form-control" value="{{ salle.type_salle }}">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Bâtiment</label>
+                        <input type="text" name="batiment" class="form-control" value="{{ salle.batiment }}">
+                    </div>
+                    <div class="mb-3 form-check">
+                        <input type="checkbox" name="actif" class="form-check-input" id="actif" {% if salle.actif %}checked{% endif %}>
+                        <label class="form-check-label" for="actif">Salle active</label>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary"><i class="bi bi-check-circle"></i> Enregistrer</button>
+                        <a href="{% url 'liste_salles' %}" class="btn btn-secondary"><i class="bi bi-arrow-left"></i> Annuler</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

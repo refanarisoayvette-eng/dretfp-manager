@@ -1,0 +1,81 @@
+{% extends 'base.html' %}
+
+{% block title %}Vue hebdomadaire{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="bi bi-grid-3x3"></i> Emploi du temps hebdomadaire</h1>
+    {% if filiere %}
+    <a href="{% url 'export_emploi_pdf' filiere.id %}" class="btn btn-danger">
+        <i class="bi bi-file-earmark-pdf"></i> Exporter en PDF
+    </a>
+    {% endif %}
+</div>
+
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-6">
+                <label class="form-label">Filière</label>
+                <select name="filiere" class="form-select" onchange="this.form.submit()">
+                    {% for f in filieres %}
+                    <option value="{{ f.id }}" {% if filiere.id == f.id %}selected{% endif %}>
+                        {{ f.etablissement.nom }} - {{ f.code }} - {{ f.nom }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% if filiere %}
+<div class="card">
+    <div class="card-header bg-primary text-white">
+        <h5 class="mb-0">{{ filiere.code }} - {{ filiere.nom }}</h5>
+        <small>{{ filiere.etablissement.nom }} | {{ filiere.get_niveau_display }}</small>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-bordered mb-0">
+                <thead class="table-dark">
+                    <tr>
+                        <th style="width: 150px;">Horaire</th>
+                        {% for j in jours %}
+                        <th class="text-center">{{ j }}</th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for c in creneaux %}
+                    <tr>
+                        <td class="bg-light">
+                            <strong>{{ c.nom }}</strong><br>
+                            <small>{{ c.heure_debut|time:"H:i" }} - {{ c.heure_fin|time:"H:i" }}</small>
+                        </td>
+                        {% for j in jours %}
+                        <td>
+                            {% for key, emploi in grille.items %}
+                                {% if key.0 == j and key.1 == c.id %}
+                                <div class="p-2 rounded" style="background: rgba(26, 95, 180, 0.1);">
+                                    <strong>{{ emploi.matiere }}</strong>
+                                    {% if emploi.salle %}<br><small><i class="bi bi-door-open"></i> {{ emploi.salle.nom }}</small>{% endif %}
+                                    {% if emploi.formateur %}<br><small><i class="bi bi-person"></i> {{ emploi.formateur.get_full_name|default:emploi.formateur.username }}</small>{% endif %}
+                                </div>
+                                {% endif %}
+                            {% endfor %}
+                        </td>
+                        {% endfor %}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="alert alert-info">
+    <i class="bi bi-info-circle"></i> Aucune filière disponible. Veuillez d'abord créer une filière.
+</div>
+{% endif %}
+{% endblock %}

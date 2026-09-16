@@ -1,0 +1,62 @@
+{% extends 'base.html' %}
+
+{% block title %}Modifier la filière{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-7">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0"><i class="bi bi-pencil"></i> Modifier la filière</h4>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label">Établissement</label>
+                        <input type="text" class="form-control" value="{{ filiere.etablissement.nom }}" disabled>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Code *</label>
+                            <input type="text" name="code" class="form-control" value="{{ filiere.code }}" required>
+                        </div>
+                        <div class="col-md-8 mb-3">
+                            <label class="form-label">Nom *</label>
+                            <input type="text" name="nom" class="form-control" value="{{ filiere.nom }}" required>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Niveau</label>
+                            <select name="niveau" class="form-select">
+                                <option value="CAP" {% if filiere.niveau == 'CAP' %}selected{% endif %}>CAP</option>
+                                <option value="BEP" {% if filiere.niveau == 'BEP' %}selected{% endif %}>BEP</option>
+                                <option value="BAC" {% if filiere.niveau == 'BAC' %}selected{% endif %}>Baccalauréat</option>
+                                <option value="AMB" {% if filiere.niveau == 'AMB' %}selected{% endif %}>AMB</option>
+                                <option value="FPQ" {% if filiere.niveau == 'FPQ' %}selected{% endif %}>FPQ</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Nb apprenants</label>
+                            <input type="number" name="nb_apprenants" class="form-control" value="{{ filiere.nb_apprenants }}">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Durée (années)</label>
+                            <input type="number" name="duree_annees" class="form-control" value="{{ filiere.duree_annees }}">
+                        </div>
+                    </div>
+                    <div class="mb-3 form-check">
+                        <input type="checkbox" name="actif" class="form-check-input" id="actif" {% if filiere.actif %}checked{% endif %}>
+                        <label class="form-check-label" for="actif">Filière active</label>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary"><i class="bi bi-check-circle"></i> Enregistrer</button>
+                        <a href="{% url 'liste_filieres' %}" class="btn btn-secondary"><i class="bi bi-arrow-left"></i> Annuler</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

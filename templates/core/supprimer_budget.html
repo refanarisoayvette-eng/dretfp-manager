@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+
+{% block title %}Supprimer la ligne budgétaire{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card border-danger">
+            <div class="card-header bg-danger text-white">
+                <h4 class="mb-0"><i class="bi bi-exclamation-triangle"></i> Confirmer la suppression</h4>
+            </div>
+            <div class="card-body">
+                <p class="lead">Voulez-vous vraiment supprimer cette ligne budgétaire ?</p>
+                
+                <div class="alert alert-warning">
+                    <strong>Établissement :</strong> {{ ligne.etablissement.nom }}<br>
+                    <strong>Produit :</strong> {{ ligne.produit.libelle }}<br>
+                    <strong>Source :</strong> {{ ligne.source_financement }}<br>
+                    <strong>Montant prévu :</strong> {{ ligne.montant_prevu|floatformat:0 }} Ar<br>
+                    <strong>Statut :</strong> {{ ligne.statut }}
+                </div>
+                
+                <p class="text-danger"><strong>⚠️ Cette action est irréversible !</strong></p>
+                
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-danger">
+                            <i class="bi bi-trash"></i> Oui, supprimer
+                        </button>
+                        <a href="{% url 'liste_budgets' %}" class="btn btn-secondary">
+                            <i class="bi bi-x-circle"></i> Annuler
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

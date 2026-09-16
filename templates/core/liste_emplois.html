@@ -1,0 +1,97 @@
+{% extends 'base.html' %}
+
+{% block title %}Emplois du temps - DRETFP Manager{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="bi bi-calendar-week"></i> Emplois du temps</h1>
+    <div class="d-flex gap-2">
+        <a href="{% url 'vue_hebdomadaire' %}" class="btn btn-info">
+            <i class="bi bi-grid-3x3"></i> Vue hebdomadaire
+        </a>
+        {% if user.is_staff or user.profil.role == 'DRETFP' or user.profil.role == 'CHEF_ETAB' %}
+        <a href="{% url 'ajouter_emploi' %}" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> Ajouter un créneau
+        </a>
+        {% endif %}
+    </div>
+</div>
+
+{% if messages %}
+    {% for message in messages %}
+    <div class="alert alert-{{ message.tags }} alert-dismissible fade show">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    {% endfor %}
+{% endif %}
+
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-3">
+                <label class="form-label">Établissement</label>
+                <select name="etablissement" class="form-select">
+                    <option value="">-- Tous --</option>
+                    {% for e in etablissements %}
+                    <option value="{{ e.id }}" {% if filtre_etab == e.id|stringformat:"s" %}selected{% endif %}>{{ e.nom }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Filière</label>
+                <select name="filiere" class="form-select">
+                    <option value="">-- Toutes --</option>
+                    {% for f in filieres %}
+                    <option value="{{ f.id }}" {% if filtre_filiere == f.id|stringformat:"s" %}selected{% endif %}>{{ f.code }} - {{ f.nom }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Jour</label>
+                <select name="jour" class="form-select">
+                    <option value="">-- Tous --</option>
+                    {% for j in jours %}
+                    <option value="{{ j }}" {% if filtre_jour == j %}selected{% endif %}>{{ j }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary w-100"><i class="bi bi-search"></i> Filtrer</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <p class="text-muted">{{ emplois.count }} créneau(x)</p>
+        <table class="table table-hover">
+            <thead class="table-primary">
+                <tr><th>Filière</th><th>Jour</th><th>Horaire</th><th>Matière</th><th>Salle</th><th>Formateur</th><th>Année</th><th>Actions</th></tr>
+            </thead>
+            <tbody>
+                {% for e in emplois %}
+                <tr>
+                    <td><span class="badge bg-primary">{{ e.filiere.code }}</span></td>
+                    <td>{{ e.jour }}</td>
+                    <td>{{ e.creneau.nom }}<br><small>{{ e.creneau.heure_debut|time:"H:i" }} - {{ e.creneau.heure_fin|time:"H:i" }}</small></td>
+                    <td><strong>{{ e.matiere }}</strong></td>
+                    <td>{{ e.salle.nom|default:"-" }}</td>
+                    <td>{{ e.formateur.get_full_name|default:e.formateur.username|default:"-" }}</td>
+                    <td>{{ e.annee_scolaire }}</td>
+                    <td>
+                        {% if user.is_staff or user.profil.role == 'DRETFP' or user.profil.role == 'CHEF_ETAB' %}
+                        <a href="{% url 'editer_emploi' e.id %}" class="btn btn-sm btn-outline-primary"><i class="bi bi-pencil"></i></a>
+                        <a href="{% url 'supprimer_emploi' e.id %}" class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></a>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="8" class="text-center text-muted py-4">Aucun créneau</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

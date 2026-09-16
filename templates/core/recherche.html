@@ -1,0 +1,88 @@
+{% extends 'base.html' %}
+
+{% block title %}Recherche - {{ q }}{% endblock %}
+
+{% block content %}
+<h1 class="mb-4"><i class="bi bi-search"></i> Recherche : "{{ q }}"</h1>
+
+{% if not q %}
+<div class="alert alert-info">
+    <i class="bi bi-info-circle"></i> Entrez un mot-clé pour rechercher.
+</div>
+{% else %}
+
+<!-- Établissements -->
+{% if etablissements %}
+<div class="card mb-4">
+    <div class="card-header bg-primary text-white">
+        <i class="bi bi-building"></i> Établissements ({{ etablissements|length }})
+    </div>
+    <div class="card-body">
+        <ul class="list-group">
+            {% for e in etablissements %}
+            <li class="list-group-item">
+                <a href="{% url 'liste_etablissements' %}">
+                    {{ e.nom }} - {{ e.get_type_etablissement_display }}
+                </a>
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+</div>
+{% endif %}
+
+<!-- Produits -->
+{% if produits %}
+<div class="card mb-4">
+    <div class="card-header bg-success text-white">
+        <i class="bi bi-box-seam"></i> Produits ({{ produits|length }})
+    </div>
+    <div class="card-body">
+        <ul class="list-group">
+            {% for p in produits %}
+            <li class="list-group-item">{{ p.libelle }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+</div>
+{% endif %}
+
+<!-- Lignes -->
+{% if lignes %}
+<div class="card mb-4">
+    <div class="card-header bg-info text-white">
+        <i class="bi bi-cash-stack"></i> Lignes budgétaires ({{ lignes|length }})
+    </div>
+    <div class="card-body">
+        <table class="table table-sm">
+            <thead>
+                <tr>
+                    <th>Établissement</th>
+                    <th>Produit</th>
+                    <th>Source</th>
+                    <th>Montant</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for l in lignes %}
+                <tr>
+                    <td>{{ l.etablissement.nom }}</td>
+                    <td>{{ l.produit.libelle|truncatechars:40 }}</td>
+                    <td>{{ l.source_financement }}</td>
+                    <td>{{ l.montant_prevu|floatformat:0 }} Ar</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+{% if not etablissements and not produits and not lignes %}
+<div class="alert alert-warning">
+    <i class="bi bi-exclamation-triangle"></i> Aucun résultat pour "{{ q }}".
+</div>
+{% endif %}
+
+{% endif %}
+{% endblock %}

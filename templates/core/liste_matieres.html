@@ -1,0 +1,99 @@
+{% extends 'base.html' %}
+
+{% block title %}Matières - DRETFP Manager{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="bi bi-book"></i> Matières</h1>
+    <div class="d-flex gap-2">
+        <a href="{% url 'export_matieres_pdf' %}" class="btn btn-danger">
+            <i class="bi bi-file-earmark-pdf"></i> Export PDF
+        </a>
+        {% if user.is_staff or user.profil.role == 'DRETFP' or user.profil.role == 'CHEF_ETAB' %}
+        <a href="{% url 'ajouter_matiere' %}" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> Ajouter
+        </a>
+        {% endif %}
+    </div>
+</div>
+
+{% if messages %}
+    {% for message in messages %}
+    <div class="alert alert-{{ message.tags }} alert-dismissible fade show">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    {% endfor %}
+{% endif %}
+
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-4">
+                <label class="form-label">Établissement</label>
+                <select name="etablissement" class="form-select">
+                    <option value="">-- Tous --</option>
+                    {% for e in etablissements %}
+                    <option value="{{ e.id }}" {% if filtre_etab == e.id|stringformat:"s" %}selected{% endif %}>{{ e.nom }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Filière</label>
+                <select name="filiere" class="form-select">
+                    <option value="">-- Toutes --</option>
+                    {% for f in filieres %}
+                    <option value="{{ f.id }}" {% if filtre_filiere == f.id|stringformat:"s" %}selected{% endif %}>{{ f.code }} - {{ f.nom }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-4 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary w-100"><i class="bi bi-search"></i> Filtrer</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <p class="text-muted">{{ matieres.count }} matière(s)</p>
+        <table class="table table-hover">
+            <thead class="table-primary">
+                <tr>
+                    <th>Code</th>
+                    <th>Nom</th>
+                    <th>Filière</th>
+                    <th>Type</th>
+                    <th>H. Théorie</th>
+                    <th>H. Pratique</th>
+                    <th>Total</th>
+                    <th>Coef</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for m in matieres %}
+                <tr>
+                    <td><span class="badge bg-primary">{{ m.code }}</span></td>
+                    <td><strong>{{ m.nom }}</strong></td>
+                    <td>{{ m.filiere.code }}</td>
+                    <td><span class="badge bg-info">{{ m.type_matiere }}</span></td>
+                    <td>{{ m.heures_theorie }}h</td>
+                    <td>{{ m.heures_pratique }}h</td>
+                    <td><strong>{{ m.heures_total }}h</strong></td>
+                    <td>{{ m.coefficient }}</td>
+                    <td>
+                        {% if user.is_staff or user.profil.role == 'DRETFP' or user.profil.role == 'CHEF_ETAB' %}
+                        <a href="{% url 'editer_matiere' m.id %}" class="btn btn-sm btn-outline-primary"><i class="bi bi-pencil"></i></a>
+                        <a href="{% url 'supprimer_matiere' m.id %}" class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></a>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="9" class="text-center text-muted py-4">Aucune matière</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

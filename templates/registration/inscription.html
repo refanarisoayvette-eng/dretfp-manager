@@ -1,0 +1,98 @@
+{% extends 'base.html' %}
+
+{% block title %}Créer un compte - DRETFP Manager{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center mt-5">
+    <div class="col-md-6">
+        <div class="card shadow">
+            <div class="card-header bg-success text-white text-center">
+                <h4 class="mb-0">
+                    <i class="bi bi-person-plus"></i> Créer un compte
+                </h4>
+            </div>
+            <div class="card-body">
+                
+                {% if form.errors %}
+                <div class="alert alert-danger">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    <strong>Erreurs :</strong>
+                    <ul class="mb-0">
+                        {% for field, errors in form.errors.items %}
+                            {% for error in errors %}
+                            <li>{{ field }} : {{ error }}</li>
+                            {% endfor %}
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
+                
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">
+                                <i class="bi bi-person"></i> Nom d'utilisateur *
+                            </label>
+                            {{ form.username }}
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">
+                                <i class="bi bi-envelope"></i> Email *
+                            </label>
+                            {{ form.email }}
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">
+                                <i class="bi bi-person-badge"></i> Prénom *
+                            </label>
+                            {{ form.first_name }}
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">
+                                <i class="bi bi-person-badge"></i> Nom *
+                            </label>
+                            {{ form.last_name }}
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">
+                            <i class="bi bi-key"></i> Mot de passe *
+                        </label>
+                        {{ form.password1 }}
+                        <small class="form-text text-muted">
+                            Minimum 8 caractères, pas trop commun.
+                        </small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">
+                            <i class="bi bi-key-fill"></i> Confirmer le mot de passe *
+                        </label>
+                        {{ form.password2 }}
+                    </div>
+                    
+                    <button type="submit" class="btn btn-success w-100">
+                        <i class="bi bi-check-circle"></i> Créer mon compte
+                    </button>
+                </form>
+                
+                <hr>
+                <p class="text-center mb-0">
+                    Déjà un compte ?
+                    <a href="{% url 'login' %}" class="text-primary fw-bold">
+                        Se connecter
+                    </a>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

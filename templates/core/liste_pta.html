@@ -1,0 +1,150 @@
+{% extends 'base.html' %}
+
+{% block title %}Plans de Travail Annuels - DRETFP Manager{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="bi bi-calendar-check"></i> Plans de Travail Annuels (PTA)</h1>
+    <div class="d-flex gap-2">
+        <a href="{% url 'export_pta_excel' %}" class="btn btn-success">
+            <i class="bi bi-file-earmark-excel"></i> Excel
+        </a>
+        <a href="{% url 'export_pta_csv' %}" class="btn btn-info">
+            <i class="bi bi-filetype-csv"></i> CSV
+        </a>
+        {% if user.is_staff or user.profil.role == 'DRETFP' or user.profil.role == 'CHEF_ETAB' %}
+        <a href="{% url 'ajouter_pta' %}" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> Créer un PTA
+        </a>
+        {% endif %}
+    </div>
+</div>
+
+{% if messages %}
+    {% for message in messages %}
+    <div class="alert alert-{{ message.tags }} alert-dismissible fade show">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    {% endfor %}
+{% endif %}
+
+<!-- FILTRES -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-4">
+                <label class="form-label">Établissement</label>
+                <select name="etablissement" class="form-select">
+                    <option value="">-- Tous --</option>
+                    {% for e in etablissements %}
+                    <option value="{{ e.id }}" {% if filtre_etab == e.id|stringformat:"s" %}selected{% endif %}>
+                        {{ e.nom }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Année</label>
+                <select name="annee" class="form-select">
+                    <option value="">-- Toutes --</option>
+                    {% for a in annees %}
+                    <option value="{{ a }}" {% if filtre_annee == a|stringformat:"s" %}selected{% endif %}>{{ a }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Statut</label>
+                <select name="statut" class="form-select">
+                    <option value="">-- Tous --</option>
+                    <option value="Brouillon" {% if filtre_statut == 'Brouillon' %}selected{% endif %}>Brouillon</option>
+                    <option value="Valide" {% if filtre_statut == 'Valide' %}selected{% endif %}>Validé</option>
+                    <option value="En cours" {% if filtre_statut == 'En cours' %}selected{% endif %}>En cours</option>
+                    <option value="Termine" {% if filtre_statut == 'Termine' %}selected{% endif %}>Terminé</option>
+                </select>
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="bi bi-search"></i> Filtrer
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- LISTE -->
+<div class="card">
+    <div class="card-body">
+        <p class="text-muted">{{ ptas.count }} PTA trouvé(s)</p>
+        
+        <table class="table table-hover">
+            <thead class="table-primary">
+                <tr>
+                    <th>Établissement</th>
+                    <th>Année</th>
+                    <th>Titre</th>
+                    <th>Statut</th>
+                    <th>Avancement</th>
+                    <th>Budget</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for pta in ptas %}
+                <tr>
+                    <td>{{ pta.etablissement.nom }}</td>
+                    <td><span class="badge bg-primary">{{ pta.annee }}</span></td>
+                    <td>
+                        <a href="{% url 'detail_pta' pta.id %}">
+                            {{ pta.titre|truncatechars:50 }}
+                        </a>
+                    </td>
+                    <td>
+                        {% if pta.statut == 'Brouillon' %}
+                        <span class="badge bg-secondary">Brouillon</span>
+                        {% elif pta.statut == 'Valide' %}
+                        <span class="badge bg-info">Validé</span>
+                        {% elif pta.statut == 'En cours' %}
+                        <span class="badge bg-warning">En cours</span>
+                        {% elif pta.statut == 'Termine' %}
+                        <span class="badge bg-success">Terminé</span>
+                        {% else %}
+                        <span class="badge bg-dark">{{ pta.statut }}</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="progress" style="height: 20px;">
+                            <div class="progress-bar bg-success" 
+                                 style="width: {{ pta.taux_avancement }}%">
+                                {{ pta.taux_avancement }}%
+                            </div>
+                        </div>
+                    </td>
+                    <td>{{ pta.budget_total|floatformat:0 }} Ar</td>
+                    <td>
+                        <a href="{% url 'detail_pta' pta.id %}" class="btn btn-sm btn-outline-primary" title="Voir">
+                            <i class="bi bi-eye"></i>
+                        </a>
+                        {% if user.is_staff or user.profil.role == 'DRETFP' or user.profil.role == 'CHEF_ETAB' %}
+                        <a href="{% url 'editer_pta' pta.id %}" class="btn btn-sm btn-outline-secondary" title="Modifier">
+                            <i class="bi bi-pencil"></i>
+                        </a>
+                        <a href="{% url 'supprimer_pta' pta.id %}" class="btn btn-sm btn-outline-danger" title="Supprimer">
+                            <i class="bi bi-trash"></i>
+                        </a>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7" class="text-center text-muted py-4">
+                        <i class="bi bi-calendar-x fs-1"></i>
+                        <p class="mt-2">Aucun PTA trouvé</p>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

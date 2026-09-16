@@ -1,0 +1,87 @@
+{% extends 'base.html' %}
+
+{% block title %}Ajouter une activité au PTA{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-9">
+        <div class="card">
+            <div class="card-header bg-success text-white">
+                <h4 class="mb-0"><i class="bi bi-plus-circle"></i> Ajouter une activité</h4>
+                <small>{{ pta.titre }}</small>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Titre *</label>
+                        <input type="text" name="titre" class="form-control" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Description</label>
+                        <textarea name="description" class="form-control" rows="3"></textarea>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-8 mb-3">
+                            <label class="form-label">Responsable</label>
+                            <input type="text" name="responsable" class="form-control">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Ordre</label>
+                            <input type="number" name="ordre" class="form-control" value="0">
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Statut</label>
+                            <select name="statut" class="form-select">
+                                <option value="Non commence">Non commencé</option>
+                                <option value="En cours">En cours</option>
+                                <option value="Termine">Terminé</option>
+                                <option value="Annule">Annulé</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Avancement (%)</label>
+                            <input type="number" name="taux_avancement" class="form-control" 
+                                   min="0" max="100" value="0">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Budget prévu (Ar)</label>
+                            <input type="number" name="budget_prevu" class="form-control" value="0">
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Date début</label>
+                            <input type="date" name="date_debut" class="form-control">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Date fin</label>
+                            <input type="date" name="date_fin" class="form-control">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Budget réalisé (Ar)</label>
+                            <input type="number" name="budget_realise" class="form-control" value="0">
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-success">
+                            <i class="bi bi-check-circle"></i> Ajouter
+                        </button>
+                        <a href="{% url 'detail_pta' pta.id %}" class="btn btn-secondary">
+                            <i class="bi bi-arrow-left"></i> Annuler
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

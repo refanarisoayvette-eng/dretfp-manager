@@ -1,0 +1,75 @@
+{% extends 'base.html' %}
+
+{% block title %}Rapports - DRETFP Manager{% endblock %}
+
+{% block content %}
+<h1 class="mb-4"><i class="bi bi-file-earmark-pdf"></i> Rapports</h1>
+
+<div class="row g-4">
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="bi bi-globe"></i> Rapport global</h5>
+            </div>
+            <div class="card-body">
+                <p>Toutes les lignes budgétaires de tous les établissements.</p>
+                <form method="get" action="{% url 'rapport_pdf_global' %}" target="_blank">
+                    <div class="mb-3">
+                        <label class="form-label">Filtrer par établissement (optionnel)</label>
+                        <select name="etablissement" class="form-select">
+                            <option value="">-- Tous --</option>
+                            {% for e in etablissements %}
+                            <option value="{{ e.id }}">{{ e.nom }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Filtrer par source (optionnel)</label>
+                        <select name="source" class="form-select">
+                            <option value="">-- Toutes --</option>
+                            <option value="RPI">RPI</option>
+                            <option value="FCE">FCE</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-danger w-100">
+                        <i class="bi bi-file-earmark-pdf"></i> Générer le PDF
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0"><i class="bi bi-file-earmark-spreadsheet"></i> Export CSV</h5>
+            </div>
+            <div class="card-body">
+                <p>Exportez toutes les données au format CSV (compatible Excel).</p>
+                <p class="text-muted">Le fichier peut être ouvert dans Excel, LibreOffice, etc.</p>
+                <a href="{% url 'export_budgets_csv' %}" class="btn btn-success w-100">
+                    <i class="bi bi-download"></i> Télécharger le CSV
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0"><i class="bi bi-info-circle"></i> À propos des rapports</h5>
+            </div>
+            <div class="card-body">
+                <ul class="mb-0">
+                    <li><strong>Rapport global</strong> : contient jusqu'à 500 lignes avec établissement, produit, source, montant et statut.</li>
+                    <li><strong>Export CSV</strong> : contient toutes les lignes, sans limite, prêt pour Excel.</li>
+                    <li>Les rapports incluent les KPI (nombre de lignes, montants totaux).</li>
+                    <li>La date et l'heure de génération sont indiquées.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

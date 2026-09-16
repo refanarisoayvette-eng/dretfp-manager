@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+
+{% block title %}Supprimer l'activité PTA{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card border-danger">
+            <div class="card-header bg-danger text-white">
+                <h4 class="mb-0"><i class="bi bi-exclamation-triangle"></i> Supprimer l'activité</h4>
+            </div>
+            <div class="card-body">
+                <p>Voulez-vous vraiment supprimer cette activité ?</p>
+                
+                <div class="alert alert-warning">
+                    <strong>Titre :</strong> {{ activite.titre }}<br>
+                    <strong>Responsable :</strong> {{ activite.responsable|default:"-" }}<br>
+                    <strong>Statut :</strong> {{ activite.statut }}
+                </div>
+                
+                <p class="text-danger"><strong>⚠️ Cette action est irréversible !</strong></p>
+                
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-danger">
+                            <i class="bi bi-trash"></i> Oui, supprimer
+                        </button>
+                        <a href="{% url 'detail_pta' activite.PTA.id %}" class="btn btn-secondary">
+                            <i class="bi bi-x-circle"></i> Annuler
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

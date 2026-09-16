@@ -1,0 +1,78 @@
+{% extends 'base.html' %}
+
+{% block title %}Salles - DRETFP Manager{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="bi bi-door-open"></i> Salles</h1>
+        <div class="d-flex gap-2">
+        <a href="{% url 'export_salles_pdf' %}" class="btn btn-danger">
+            <i class="bi bi-file-earmark-pdf"></i> Export PDF
+        </a>
+        {% if user.is_staff or user.profil.role == 'DRETFP' or user.profil.role == 'CHEF_ETAB' %}
+        <a href="{% url 'ajouter_salle' %}" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> Ajouter
+        </a>
+        {% endif %}
+    </div>
+</div>
+
+{% if messages %}
+    {% for message in messages %}
+    <div class="alert alert-{{ message.tags }} alert-dismissible fade show">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    {% endfor %}
+{% endif %}
+
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-6">
+                <label class="form-label">Établissement</label>
+                <select name="etablissement" class="form-select">
+                    <option value="">-- Tous --</option>
+                    {% for e in etablissements %}
+                    <option value="{{ e.id }}" {% if filtre_etab == e.id|stringformat:"s" %}selected{% endif %}>{{ e.nom }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary w-100"><i class="bi bi-search"></i> Filtrer</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <p class="text-muted">{{ salles.count }} salle(s)</p>
+        <table class="table table-hover">
+            <thead class="table-primary">
+                <tr><th>Nom</th><th>Établissement</th><th>Capacité</th><th>Type</th><th>Bâtiment</th><th>Actif</th><th>Actions</th></tr>
+            </thead>
+            <tbody>
+                {% for s in salles %}
+                <tr>
+                    <td><strong>{{ s.nom }}</strong></td>
+                    <td>{{ s.etablissement.nom }}</td>
+                    <td>{{ s.capacite }}</td>
+                    <td>{{ s.type_salle|default:"-" }}</td>
+                    <td>{{ s.batiment|default:"-" }}</td>
+                    <td>{% if s.actif %}<span class="badge bg-success">Oui</span>{% else %}<span class="badge bg-secondary">Non</span>{% endif %}</td>
+                    <td>
+                        {% if user.is_staff or user.profil.role == 'DRETFP' or user.profil.role == 'CHEF_ETAB' %}
+                        <a href="{% url 'editer_salle' s.id %}" class="btn btn-sm btn-outline-primary"><i class="bi bi-pencil"></i></a>
+                        <a href="{% url 'supprimer_salle' s.id %}" class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></a>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="7" class="text-center text-muted py-4">Aucune salle</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

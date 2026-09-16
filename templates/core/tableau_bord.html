@@ -1,0 +1,385 @@
+{% extends 'base.html' %}
+
+{% block title %}Tableau de bord - DRETFP Manager{% endblock %}
+
+{% block content %}
+
+<!-- HEADER -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="page-title mb-0">
+        <i class="bi bi-graph-up-arrow"></i> Tableau de bord
+    </h1>
+    <a href="{% url 'export_budgets_csv' %}" class="btn btn-success">
+        <i class="bi bi-download"></i> Exporter CSV
+    </a>
+</div>
+
+<!-- ALERTES -->
+{% if alertes %}
+<div class="row mb-4">
+    <div class="col-12">
+        {% for alerte in alertes %}
+        <div class="alert alert-{{ alerte.type }} alert-dismissible fade show">
+            <i class="bi bi-exclamation-triangle-fill"></i> {{ alerte.message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<!-- FILTRES -->
+<div class="card mb-4">
+    <div class="card-header" style="background: linear-gradient(135deg, #f1f5f9, #e2e8f0); color: #334155;">
+        <i class="bi bi-funnel-fill"></i> Filtres
+    </div>
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-5">
+                <label class="form-label">Établissement</label>
+                <select name="etablissement" class="form-select">
+                    <option value="">-- Tous les établissements --</option>
+                    {% for e in etablissements %}
+                    <option value="{{ e.id }}" {% if filtre_etab == e.id|stringformat:"s" %}selected{% endif %}>
+                        {{ e.nom }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-5">
+                <label class="form-label">Source de financement</label>
+                <select name="source" class="form-select">
+                    <option value="">-- Toutes --</option>
+                    <option value="RPI" {% if filtre_source == 'RPI' %}selected{% endif %}>RPI</option>
+                    <option value="FCE" {% if filtre_source == 'FCE' %}selected{% endif %}>FCE</option>
+                </select>
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="bi bi-funnel"></i> Filtrer
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- KPI LIGNE 1 -->
+<div class="row g-3 mb-3">
+    <div class="col-md-3">
+        <div class="kpi-card kpi-navy">
+            <div class="kpi-icon"><i class="bi bi-cash-stack"></i></div>
+            <h2>{{ total_prevu|floatformat:0 }}</h2>
+            <p>Montant prévu (Ar)</p>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="kpi-card kpi-emerald">
+            <div class="kpi-icon"><i class="bi bi-check-circle"></i></div>
+            <h2>{{ total_realise|floatformat:0 }}</h2>
+            <p>Montant réalisé (Ar)</p>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="kpi-card kpi-gold">
+            <div class="kpi-icon"><i class="bi bi-percent"></i></div>
+            <h2>{{ taux_execution }}%</h2>
+            <p>Taux d'exécution</p>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="kpi-card kpi-royal">
+            <div class="kpi-icon"><i class="bi bi-list-check"></i></div>
+            <h2>{{ nb_lignes }}</h2>
+            <p>Lignes budgétaires</p>
+        </div>
+    </div>
+</div>
+
+<!-- KPI LIGNE 2 -->
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="card text-center p-3">
+            <h6 class="stat-label mb-1">Établissements</h6>
+            <div class="stat-value" style="color: #1e40af;">{{ total_etab }}</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center p-3">
+            <h6 class="stat-label mb-1">Produits</h6>
+            <div class="stat-value" style="color: #059669;">{{ total_produits }}</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center p-3">
+            <h6 class="stat-label mb-1">Activités</h6>
+            <div class="stat-value" style="color: #d97706;">{{ total_activites }}</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center p-3">
+            <h6 class="stat-label mb-1">Lignes sans montant</h6>
+            <div class="stat-value" style="color: #dc2626;">{{ nb_lignes_sans_montant }}</div>
+        </div>
+    </div>
+</div>
+
+<!-- GRAPHIQUES 1 -->
+<div class="row g-4 mb-4">
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header" style="background: linear-gradient(135deg, #1e40af, #3b82f6); color: white;">
+                <i class="bi bi-pie-chart-fill"></i> Répartition par source
+            </div>
+            <div class="card-body">
+                <canvas id="chartSources" style="max-height: 280px;"></canvas>
+                <div class="text-center mt-3 pt-3" style="border-top: 1px solid #e2e8f0;">
+                    <div class="row">
+                        <div class="col-6">
+                            <div class="stat-label">RPI</div>
+                            <div style="font-weight: 700; color: #1e40af;">{{ rpi_total|floatformat:0 }} Ar</div>
+                        </div>
+                        <div class="col-6">
+                            <div class="stat-label">FCE</div>
+                            <div style="font-weight: 700; color: #059669;">{{ fce_total|floatformat:0 }} Ar</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header" style="background: linear-gradient(135deg, #0891b2, #06b6d4); color: white;">
+                <i class="bi bi-pie-chart-fill"></i> Répartition par statut
+            </div>
+            <div class="card-body">
+                <canvas id="chartStatuts" style="max-height: 280px;"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- GRAPHIQUES 2 -->
+<div class="row g-4 mb-4">
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header" style="background: linear-gradient(135deg, #047857, #10b981); color: white;">
+                <i class="bi bi-bar-chart-fill"></i> Montants par établissement
+            </div>
+            <div class="card-body">
+                <canvas id="chartEtablissements" style="max-height: 280px;"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header" style="background: linear-gradient(135deg, #334155, #64748b); color: white;">
+                <i class="bi bi-building"></i> Types d'établissement
+            </div>
+            <div class="card-body">
+                <canvas id="chartTypes" style="max-height: 280px;"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- COMPARAISON RPI VS FCE -->
+<div class="row g-4 mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header" style="background: linear-gradient(135deg, #0a2540, #1e3a5f); color: white;">
+                <i class="bi bi-bar-chart-line-fill"></i> Comparaison RPI vs FCE par établissement
+            </div>
+            <div class="card-body">
+                <canvas id="chartRpiFceEtab" style="max-height: 320px;"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- TOP ETABS + TAUX -->
+<div class="row g-4 mb-4">
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header" style="background: linear-gradient(135deg, #b45309, #f59e0b); color: white;">
+                <i class="bi bi-trophy-fill"></i> Top 10 établissements (par montant)
+            </div>
+            <div class="card-body">
+                <canvas id="chartTopEtab" style="max-height: 320px;"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header" style="background: linear-gradient(135deg, #991b1b, #ef4444); color: white;">
+                <i class="bi bi-speedometer2"></i> Taux d'exécution par établissement
+            </div>
+            <div class="card-body">
+                <canvas id="chartTauxExec" style="max-height: 320px;"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- TOP PRODUITS -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header" style="background: linear-gradient(135deg, #1e293b, #334155); color: white;">
+                <i class="bi bi-trophy"></i> Top 10 des produits (par montant prévu)
+            </div>
+            <div class="card-body">
+                <canvas id="chartProduits" style="max-height: 350px;"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- TABLEAU TOP 5 -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header" style="background: linear-gradient(135deg, #0f172a, #1e293b); color: white;">
+                <i class="bi bi-list-ol"></i> Classement des 5 premiers établissements
+            </div>
+            <div class="card-body p-0">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th style="width: 80px;">Rang</th>
+                            <th>Établissement</th>
+                            <th class="text-center">Nombre de lignes</th>
+                            <th class="text-end">Montant total prévu</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for etab in top_etabs %}
+                        <tr>
+                            <td>
+                                {% if forloop.counter == 1 %}
+                                <span class="badge badge-rang badge-rang-1">#{{ forloop.counter }}</span>
+                                {% elif forloop.counter == 2 %}
+                                <span class="badge badge-rang badge-rang-2">#{{ forloop.counter }}</span>
+                                {% elif forloop.counter == 3 %}
+                                <span class="badge badge-rang badge-rang-3">#{{ forloop.counter }}</span>
+                                {% else %}
+                                <span class="badge badge-rang badge-rang-default">#{{ forloop.counter }}</span>
+                                {% endif %}
+                            </td>
+                            <td><strong>{{ etab.etablissement__nom }}</strong></td>
+                            <td class="text-center">{{ etab.nb_lignes }}</td>
+                            <td class="text-end"><strong style="color: #059669;">{{ etab.total|floatformat:0 }} Ar</strong></td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="4" class="text-center text-muted py-4">Aucune donnée</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// 1. Sources
+fetch('{% url "api_sources" %}')
+    .then(r => r.json())
+    .then(data => {
+        new Chart(document.getElementById('chartSources'), {
+            type: 'doughnut',
+            data: { labels: data.labels, datasets: [{ data: data.values,
+                backgroundColor: ['#1e40af', '#059669', '#d97706', '#dc2626'], borderWidth: 0 }] },
+            options: { plugins: { legend: { position: 'bottom' } } }
+        });
+    });
+
+// 2. Statuts
+fetch('{% url "api_statuts" %}')
+    .then(r => r.json())
+    .then(data => {
+        new Chart(document.getElementById('chartStatuts'), {
+            type: 'doughnut',
+            data: { labels: data.labels, datasets: [{ data: data.values,
+                backgroundColor: ['#64748b', '#06b6d4', '#f59e0b', '#10b981'], borderWidth: 0 }] },
+            options: { plugins: { legend: { position: 'bottom' } } }
+        });
+    });
+
+// 3. Etablissements
+fetch('{% url "api_etablissements" %}')
+    .then(r => r.json())
+    .then(data => {
+        new Chart(document.getElementById('chartEtablissements'), {
+            type: 'bar',
+            data: { labels: data.labels, datasets: [{ label: 'Montant prévu (Ar)',
+                data: data.values, backgroundColor: 'rgba(5, 150, 105, 0.8)', borderRadius: 6 }] },
+            options: { scales: { y: { beginAtZero: true } }, plugins: { legend: { display: false } } }
+        });
+    });
+
+// 4. Types
+fetch('{% url "api_types_etablissements" %}')
+    .then(r => r.json())
+    .then(data => {
+        new Chart(document.getElementById('chartTypes'), {
+            type: 'pie',
+            data: { labels: data.labels, datasets: [{ data: data.values,
+                backgroundColor: ['#1e40af', '#059669', '#d97706', '#dc2626'], borderWidth: 0 }] },
+            options: { plugins: { legend: { position: 'bottom' } } }
+        });
+    });
+
+// 5. RPI vs FCE par etab
+fetch('{% url "api_rpi_fce_par_etab" %}')
+    .then(r => r.json())
+    .then(data => {
+        new Chart(document.getElementById('chartRpiFceEtab'), {
+            type: 'bar',
+            data: { labels: data.labels, datasets: [
+                { label: 'RPI', data: data.rpi, backgroundColor: 'rgba(30, 64, 175, 0.8)', borderRadius: 6 },
+                { label: 'FCE', data: data.fce, backgroundColor: 'rgba(5, 150, 105, 0.8)', borderRadius: 6 }
+            ] },
+            options: { scales: { y: { beginAtZero: true } } }
+        });
+    });
+
+// 6. Top etabs
+fetch('{% url "api_top_etablissements_montant" %}')
+    .then(r => r.json())
+    .then(data => {
+        new Chart(document.getElementById('chartTopEtab'), {
+            type: 'bar',
+            data: { labels: data.labels, datasets: [{ label: 'Montant (Ar)',
+                data: data.values, backgroundColor: 'rgba(217, 119, 6, 0.8)', borderRadius: 6 }] },
+            options: { indexAxis: 'y', scales: { x: { beginAtZero: true } }, plugins: { legend: { display: false } } }
+        });
+    });
+
+// 7. Taux execution
+fetch('{% url "api_taux_execution_etab" %}')
+    .then(r => r.json())
+    .then(data => {
+        new Chart(document.getElementById('chartTauxExec'), {
+            type: 'bar',
+            data: { labels: data.labels, datasets: [{ label: 'Taux (%)',
+                data: data.values, backgroundColor: 'rgba(220, 38, 38, 0.8)', borderRadius: 6 }] },
+            options: { scales: { y: { beginAtZero: true, max: 100 } }, plugins: { legend: { display: false } } }
+        });
+    });
+
+// 8. Top produits
+fetch('{% url "api_produits" %}')
+    .then(r => r.json())
+    .then(data => {
+        new Chart(document.getElementById('chartProduits'), {
+            type: 'bar',
+            data: { labels: data.labels, datasets: [{ label: 'Montant prévu (Ar)',
+                data: data.values, backgroundColor: 'rgba(8, 145, 178, 0.8)', borderRadius: 6 }] },
+            options: { indexAxis: 'y', scales: { x: { beginAtZero: true } }, plugins: { legend: { display: false } } }
+        });
+    });
+</script>
+{% endblock %}

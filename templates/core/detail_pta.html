@@ -1,0 +1,169 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ pta.titre }} - PTA{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <a href="{% url 'liste_pta' %}" class="btn btn-sm btn-outline-secondary mb-2">
+            <i class="bi bi-arrow-left"></i> Retour
+        </a>
+        <h1><i class="bi bi-calendar-check"></i> {{ pta.titre }}</h1>
+        <p class="text-muted mb-0">
+            <strong>{{ pta.etablissement.nom }}</strong> - Année {{ pta.annee }}
+        </p>
+    </div>
+        <div class="d-flex gap-2 flex-wrap">
+        <a href="{% url 'export_pta_pdf' pta.id %}" class="btn btn-danger">
+            <i class="bi bi-file-earmark-pdf"></i> Exporter en PDF
+        </a>
+        <a href="{% url 'export_activites_pta_excel' pta.id %}" class="btn btn-success">
+            <i class="bi bi-file-earmark-excel"></i> Exporter les activités
+        </a>
+        {% if user.is_staff or user.profil.role == 'DRETFP' or user.profil.role == 'CHEF_ETAB' %}
+        <a href="{% url 'editer_pta' pta.id %}" class="btn btn-primary">
+            <i class="bi bi-pencil"></i> Modifier
+        </a>
+        <a href="{% url 'ajouter_activite_pta' pta.id %}" class="btn btn-warning">
+            <i class="bi bi-plus-circle"></i> Ajouter activité
+        </a>
+        {% endif %}
+    </div>
+</div>
+
+<!-- INFOS PTA -->
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body text-center">
+                <h6 class="text-muted">STATUT</h6>
+                <h4>
+                    {% if pta.statut == 'Brouillon' %}
+                    <span class="badge bg-secondary">Brouillon</span>
+                    {% elif pta.statut == 'Valide' %}
+                    <span class="badge bg-info">Validé</span>
+                    {% elif pta.statut == 'En cours' %}
+                    <span class="badge bg-warning">En cours</span>
+                    {% elif pta.statut == 'Termine' %}
+                    <span class="badge bg-success">Terminé</span>
+                    {% endif %}
+                </h4>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body text-center">
+                <h6 class="text-muted">RESPONSABLE</h6>
+                <h5>{{ pta.responsable|default:"-" }}</h5>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body text-center">
+                <h6 class="text-muted">NB ACTIVITÉS</h6>
+                <h4>{{ activites.count }}</h4>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body text-center">
+                <h6 class="text-muted">AVANCEMENT GLOBAL</h6>
+                <h4>{{ pta.taux_avancement }}%</h4>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- PROGRESSION -->
+<div class="card mb-4">
+    <div class="card-body">
+        <h6>Progression globale</h6>
+        <div class="progress" style="height: 30px;">
+            <div class="progress-bar bg-success" style="width: {{ pta.taux_avancement }}%">
+                {{ pta.taux_avancement }}%
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ACTIVITES -->
+<div class="card">
+    <div class="card-header bg-primary text-white">
+        <h5 class="mb-0"><i class="bi bi-list-task"></i> Activités du PTA</h5>
+    </div>
+    <div class="card-body">
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Titre</th>
+                    <th>Responsable</th>
+                    <th>Dates</th>
+                    <th>Statut</th>
+                    <th>Avancement</th>
+                    <th>Budget</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for a in activites %}
+                <tr>
+                    <td>{{ a.ordre }}</td>
+                    <td>
+                        <strong>{{ a.titre|truncatechars:50 }}</strong>
+                        {% if a.description %}
+                        <br><small class="text-muted">{{ a.description|truncatechars:80 }}</small>
+                        {% endif %}
+                    </td>
+                    <td>{{ a.responsable|default:"-" }}</td>
+                    <td>
+                        {% if a.date_debut %}{{ a.date_debut|date:"d/m/Y" }}{% endif %}
+                        {% if a.date_fin %}<br>→ {{ a.date_fin|date:"d/m/Y" }}{% endif %}
+                    </td>
+                    <td>
+                        {% if a.statut == 'Non commence' %}
+                        <span class="badge bg-secondary">Non commencé</span>
+                        {% elif a.statut == 'En cours' %}
+                        <span class="badge bg-warning">En cours</span>
+                        {% elif a.statut == 'Termine' %}
+                        <span class="badge bg-success">Terminé</span>
+                        {% elif a.statut == 'Annule' %}
+                        <span class="badge bg-danger">Annulé</span>
+                        {% else %}
+                        <span class="badge bg-info">{{ a.statut }}</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="progress" style="height: 15px; min-width: 80px;">
+                            <div class="progress-bar" style="width: {{ a.taux_avancement }}%"></div>
+                        </div>
+                        <small>{{ a.taux_avancement }}%</small>
+                    </td>
+                    <td>{{ a.budget_prevu|floatformat:0 }} Ar</td>
+                    <td>
+                        {% if user.is_staff or user.profil.role == 'DRETFP' or user.profil.role == 'CHEF_ETAB' %}
+                        <a href="{% url 'editer_activite_pta' a.id %}" class="btn btn-sm btn-outline-primary">
+                            <i class="bi bi-pencil"></i>
+                        </a>
+                        <a href="{% url 'supprimer_activite_pta' a.id %}" class="btn btn-sm btn-outline-danger">
+                            <i class="bi bi-trash"></i>
+                        </a>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="8" class="text-center text-muted py-4">
+                        <i class="bi bi-inbox fs-1"></i>
+                        <p class="mt-2">Aucune activité. Cliquez sur "Ajouter une activité".</p>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

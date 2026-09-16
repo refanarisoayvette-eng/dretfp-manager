@@ -1,0 +1,290 @@
+{% extends 'base.html' %}
+
+{% block title %}Statistiques - DRETFP Manager{% endblock %}
+
+{% block content %}
+<h1 class="mb-4"><i class="bi bi-graph-up"></i> Statistiques avancées</h1>
+
+<!-- KPI GLOBAUX -->
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="kpi-card kpi-card-primary">
+            <div class="text-center">
+                <i class="bi bi-building"></i>
+                <h2>{{ total_etab }}</h2>
+                <p class="mb-0">Établissements</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="kpi-card kpi-card-success">
+            <div class="text-center">
+                <i class="bi bi-box-seam"></i>
+                <h2>{{ total_produits }}</h2>
+                <p class="mb-0">Produits</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="kpi-card kpi-card-warning">
+            <div class="text-center">
+                <i class="bi bi-list-check"></i>
+                <h2>{{ total_lignes }}</h2>
+                <p class="mb-0">Lignes budgétaires</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="kpi-card kpi-card-info">
+            <div class="text-center">
+                <i class="bi bi-cash-stack"></i>
+                <h2>{{ total_prevu|floatformat:0 }}</h2>
+                <p class="mb-0">Montant prévu (Ar)</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- RPI vs FCE -->
+<div class="row g-4 mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <i class="bi bi-pie-chart-fill"></i> Répartition RPI vs FCE
+            </div>
+            <div class="card-body">
+                <canvas id="chartRpiFce" style="max-height: 300px;"></canvas>
+                <div class="text-center mt-3">
+                    <p class="mb-1"><strong>RPI :</strong> {{ rpi_total|floatformat:0 }} Ar</p>
+                    <p class="mb-0"><strong>FCE :</strong> {{ fce_total|floatformat:0 }} Ar</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-success text-white">
+                <i class="bi bi-pie-chart-fill"></i> Répartition par statut
+            </div>
+            <div class="card-body">
+                <canvas id="chartStatutsDetail" style="max-height: 300px;"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- RPI vs FCE par établissement -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <i class="bi bi-bar-chart-fill"></i> Comparaison RPI vs FCE par établissement
+            </div>
+            <div class="card-body">
+                <canvas id="chartRpiFceEtab" style="max-height: 350px;"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Top établissements + Taux -->
+<div class="row g-4 mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-warning text-dark">
+                <i class="bi bi-trophy-fill"></i> Top 10 établissements (par montant)
+            </div>
+            <div class="card-body">
+                <canvas id="chartTopEtab" style="max-height: 350px;"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-danger text-white">
+                <i class="bi bi-speedometer2"></i> Taux d'exécution par établissement
+            </div>
+            <div class="card-body">
+                <canvas id="chartTauxExec" style="max-height: 350px;"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Produits par établissement -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-secondary text-white">
+                <i class="bi bi-boxes"></i> Nombre de produits par établissement
+            </div>
+            <div class="card-body">
+                <canvas id="chartProduitsEtab" style="max-height: 350px;"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- TOP 5 ÉTABLISSEMENTS (TABLEAU) -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-dark text-white">
+                <i class="bi bi-list-ol"></i> Top 5 établissements
+            </div>
+            <div class="card-body">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Établissement</th>
+                            <th>Nb lignes</th>
+                            <th>Montant total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for etab in top_etabs %}
+                        <tr>
+                            <td><strong>{{ forloop.counter }}</strong></td>
+                            <td>{{ etab.etablissement__nom }}</td>
+                            <td>{{ etab.nb_lignes }}</td>
+                            <td>{{ etab.total|floatformat:0 }} Ar</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// 1. RPI vs FCE (global)
+fetch('{% url "api_sources" %}')
+    .then(r => r.json())
+    .then(data => {
+        new Chart(document.getElementById('chartRpiFce'), {
+            type: 'doughnut',
+            data: {
+                labels: data.labels,
+                datasets: [{
+                    data: data.values,
+                    backgroundColor: ['#1a5fb4', '#26a269', '#e5a50a', '#c01c28']
+                }]
+            }
+        });
+    });
+
+// 2. Statuts detail
+fetch('{% url "api_statuts_detail" %}')
+    .then(r => r.json())
+    .then(data => {
+        new Chart(document.getElementById('chartStatutsDetail'), {
+            type: 'doughnut',
+            data: {
+                labels: data.labels,
+                datasets: [{
+                    data: data.counts,
+                    backgroundColor: ['#6c757d', '#1c71d8', '#e5a50a', '#26a269']
+                }]
+            }
+        });
+    });
+
+// 3. RPI vs FCE par etablissement
+fetch('{% url "api_rpi_fce_par_etab" %}')
+    .then(r => r.json())
+    .then(data => {
+        new Chart(document.getElementById('chartRpiFceEtab'), {
+            type: 'bar',
+            data: {
+                labels: data.labels,
+                datasets: [
+                    {
+                        label: 'RPI',
+                        data: data.rpi,
+                        backgroundColor: '#1a5fb4'
+                    },
+                    {
+                        label: 'FCE',
+                        data: data.fce,
+                        backgroundColor: '#26a269'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    x: { stacked: false },
+                    y: { beginAtZero: true }
+                }
+            }
+        });
+    });
+
+// 4. Top etablissements
+fetch('{% url "api_top_etablissements_montant" %}')
+    .then(r => r.json())
+    .then(data => {
+        new Chart(document.getElementById('chartTopEtab'), {
+            type: 'bar',
+            data: {
+                labels: data.labels,
+                datasets: [{
+                    label: 'Montant (Ar)',
+                    data: data.values,
+                    backgroundColor: '#e5a50a'
+                }]
+            },
+            options: {
+                indexAxis: 'y',
+                scales: { x: { beginAtZero: true } }
+            }
+        });
+    });
+
+// 5. Taux execution
+fetch('{% url "api_taux_execution_etab" %}')
+    .then(r => r.json())
+    .then(data => {
+        new Chart(document.getElementById('chartTauxExec'), {
+            type: 'bar',
+            data: {
+                labels: data.labels,
+                datasets: [{
+                    label: 'Taux (%)',
+                    data: data.values,
+                    backgroundColor: '#c01c28'
+                }]
+            },
+            options: {
+                scales: {
+                    y: { beginAtZero: true, max: 100 }
+                }
+            }
+        });
+    });
+
+// 6. Produits par etablissement
+fetch('{% url "api_produits_par_etab" %}')
+    .then(r => r.json())
+    .then(data => {
+        new Chart(document.getElementById('chartProduitsEtab'), {
+            type: 'bar',
+            data: {
+                labels: data.labels,
+                datasets: [{
+                    label: 'Nombre de produits',
+                    data: data.values,
+                    backgroundColor: '#1c71d8'
+                }]
+            },
+            options: {
+                scales: { y: { beginAtZero: true } }
+            }
+        });
+    });
+</script>
+{% endblock %}

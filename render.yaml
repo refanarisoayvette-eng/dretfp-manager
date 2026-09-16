@@ -1,0 +1,28 @@
+services:
+  - type: web
+    name: dretfp-manager
+    env: python
+    region: frankfurt
+    plan: free
+    buildCommand: "./build.sh"
+    startCommand: "gunicorn config.wsgi:application"
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.0
+      - key: DJANGO_SECRET_KEY
+        generateValue: true
+      - key: DJANGO_DEBUG
+        value: "False"
+      - key: PYTHONUNBUFFERED
+        value: "1"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: dretfp-db
+          property: connectionString
+
+databases:
+  - name: dretfp-db
+    databaseName: dretfp_db
+    user: dretfp_user
+    plan: free
+    region: frankfurt

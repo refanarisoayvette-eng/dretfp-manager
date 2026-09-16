@@ -1,0 +1,211 @@
+{% extends 'base.html' %}
+
+{% block title %}Lignes budgétaires - DRETFP Manager{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="bi bi-cash-stack"></i> Lignes budgétaires</h1>
+    
+    {% if user.is_staff or user.profil.role == 'DRETFP' or user.profil.role == 'CHEF_ETAB' or user.profil.role == 'AGENT' %}
+    <a href="{% url 'ajouter_budget' %}" class="btn btn-primary">
+        <i class="bi bi-plus-circle"></i> Ajouter une ligne
+    </a>
+    {% endif %}
+</div>
+
+<!-- MESSAGES -->
+{% if messages %}
+    {% for message in messages %}
+    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    {% endfor %}
+{% endif %}
+
+<!-- FILTRES AVANCES -->
+<div class="card mb-4">
+    <div class="card-header bg-secondary text-white">
+        <i class="bi bi-funnel"></i> Filtres avancés
+    </div>
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            
+            <div class="col-md-4">
+                <label class="form-label">
+                    <i class="bi bi-search"></i> Recherche
+                </label>
+                <input type="text" name="q" class="form-control" 
+                       placeholder="Produit, établissement, remarque..." 
+                       value="{{ filtre_q }}">
+            </div>
+            
+            <div class="col-md-3">
+                <label class="form-label">Établissement</label>
+                <select name="etablissement" class="form-select">
+                    <option value="">-- Tous --</option>
+                    {% for e in etablissements %}
+                    <option value="{{ e.id }}" {% if filtre_etab == e.id|stringformat:"s" %}selected{% endif %}>
+                        {{ e.nom }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="col-md-2">
+                <label class="form-label">Source</label>
+                <select name="source" class="form-select">
+                    <option value="">-- Toutes --</option>
+                    <option value="RPI" {% if filtre_source == 'RPI' %}selected{% endif %}>RPI</option>
+                    <option value="FCE" {% if filtre_source == 'FCE' %}selected{% endif %}>FCE</option>
+                </select>
+            </div>
+            
+            <div class="col-md-3">
+                <label class="form-label">Statut</label>
+                <select name="statut" class="form-select">
+                    <option value="">-- Tous --</option>
+                    <option value="Planifie" {% if filtre_statut == 'Planifie' %}selected{% endif %}>Planifié</option>
+                    <option value="Engage" {% if filtre_statut == 'Engage' %}selected{% endif %}>Engagé</option>
+                    <option value="Liquide" {% if filtre_statut == 'Liquide' %}selected{% endif %}>Liquidé</option>
+                    <option value="Paye" {% if filtre_statut == 'Paye' %}selected{% endif %}>Payé</option>
+                </select>
+            </div>
+            
+            <div class="col-md-3">
+                <label class="form-label">Montant minimum (Ar)</label>
+                <input type="number" name="montant_min" class="form-control" 
+                       placeholder="Ex: 1000000" value="{{ filtre_montant_min }}">
+            </div>
+            
+            <div class="col-md-4">
+                <label class="form-label">Trier par</label>
+                <select name="tri" class="form-select">
+                    <option value="-date_creation" {% if filtre_tri == '-date_creation' %}selected{% endif %}>Plus récent</option>
+                    <option value="date_creation" {% if filtre_tri == 'date_creation' %}selected{% endif %}>Plus ancien</option>
+                    <option value="-montant_prevu" {% if filtre_tri == '-montant_prevu' %}selected{% endif %}>Montant décroissant</option>
+                    <option value="montant_prevu" {% if filtre_tri == 'montant_prevu' %}selected{% endif %}>Montant croissant</option>
+                    <option value="produit__libelle" {% if filtre_tri == 'produit__libelle' %}selected{% endif %}>Produit (A-Z)</option>
+                    <option value="etablissement__nom" {% if filtre_tri == 'etablissement__nom' %}selected{% endif %}>Établissement (A-Z)</option>
+                </select>
+            </div>
+            
+            <div class="col-md-5 d-flex align-items-end gap-2">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-search"></i> Filtrer
+                </button>
+                <a href="{% url 'liste_budgets' %}" class="btn btn-outline-secondary">
+                    <i class="bi bi-x-circle"></i> Réinitialiser
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- RESULTATS -->
+<div class="card">
+    <div class="card-body">
+        <p class="text-muted">
+            <strong>{{ paginator.count }}</strong> ligne(s) trouvée(s) - 
+            Page {{ page_obj.number }} / {{ paginator.num_pages }}
+        </p>
+        
+        <div class="table-responsive">
+            <table class="table table-hover table-sm">
+                <thead class="table-primary">
+                    <tr>
+                        <th>Établissement</th>
+                        <th>Produit</th>
+                        <th>Source</th>
+                        <th>Montant prévu</th>
+                        <th>Montant réalisé</th>
+                        <th>Statut</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for ligne in lignes %}
+                    <tr>
+                        <td>{{ ligne.etablissement.nom }}</td>
+                        <td>{{ ligne.produit.libelle|truncatechars:40 }}</td>
+                        <td>
+                            <span class="badge {% if ligne.source_financement == 'FCE' %}bg-success{% else %}bg-primary{% endif %}">
+                                {{ ligne.source_financement }}
+                            </span>
+                        </td>
+                        <td>{{ ligne.montant_prevu|floatformat:0 }} Ar</td>
+                        <td>{{ ligne.montant_realise|floatformat:0 }} Ar</td>
+                        <td>
+                            <span class="badge bg-secondary">{{ ligne.statut }}</span>
+                        </td>
+                        <td>
+                            {% if user.is_staff or user.profil.role == 'DRETFP' or user.profil.role == 'CHEF_ETAB' or user.profil.role == 'AGENT' %}
+                            <a href="{% url 'editer_budget' ligne.id %}" class="btn btn-sm btn-outline-primary" title="Modifier">
+                                <i class="bi bi-pencil"></i>
+                            </a>
+                            {% endif %}
+                            
+                            {% if user.is_staff or user.profil.role == 'DRETFP' or user.profil.role == 'CHEF_ETAB' %}
+                            <a href="{% url 'supprimer_budget' ligne.id %}" class="btn btn-sm btn-outline-danger" title="Supprimer">
+                                <i class="bi bi-trash"></i>
+                            </a>
+                            {% endif %}
+                            
+                            {% if not user.is_staff and user.profil.role != 'DRETFP' and user.profil.role != 'CHEF_ETAB' and user.profil.role != 'AGENT' %}
+                            <span class="text-muted small">Lecture seule</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="text-center text-muted py-4">
+                            <i class="bi bi-inbox fs-1"></i>
+                            <p class="mt-2">Aucune ligne budgétaire trouvée</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- PAGINATION -->
+        {% if paginator.num_pages > 1 %}
+        <nav>
+            <ul class="pagination justify-content-center">
+                {% if page_obj.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page=1{% for k,v in request.GET.items %}{% if k != 'page' %}&{{ k }}={{ v }}{% endif %}{% endfor %}">
+                        <i class="bi bi-chevron-double-left"></i>
+                    </a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% for k,v in request.GET.items %}{% if k != 'page' %}&{{ k }}={{ v }}{% endif %}{% endfor %}">
+                        <i class="bi bi-chevron-left"></i>
+                    </a>
+                </li>
+                {% endif %}
+                
+                <li class="page-item active">
+                    <span class="page-link">
+                        Page {{ page_obj.number }} / {{ paginator.num_pages }}
+                    </span>
+                </li>
+                
+                {% if page_obj.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.next_page_number }}{% for k,v in request.GET.items %}{% if k != 'page' %}&{{ k }}={{ v }}{% endif %}{% endfor %}">
+                        <i class="bi bi-chevron-right"></i>
+                    </a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ paginator.num_pages }}{% for k,v in request.GET.items %}{% if k != 'page' %}&{{ k }}={{ v }}{% endif %}{% endfor %}">
+                        <i class="bi bi-chevron-double-right"></i>
+                    </a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

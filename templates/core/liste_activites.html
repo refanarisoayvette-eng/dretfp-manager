@@ -1,0 +1,100 @@
+{% extends 'base.html' %}
+
+{% block title %}Activités - DRETFP Manager{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="bi bi-list-check"></i> Activités</h1>
+    {% if user.is_staff or user.profil.role == 'DRETFP' %}
+    <a href="{% url 'ajouter_activite' %}" class="btn btn-primary">
+        <i class="bi bi-plus-circle"></i> Ajouter une activité
+    </a>
+    {% endif %}
+</div>
+
+{% if messages %}
+    {% for message in messages %}
+    <div class="alert alert-{{ message.tags }} alert-dismissible fade show">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    {% endfor %}
+{% endif %}
+
+<!-- FILTRES -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-5">
+                <label class="form-label">Recherche</label>
+                <input type="text" name="q" class="form-control" 
+                       placeholder="Nom de l'activité..." value="{{ filtre_q }}">
+            </div>
+            <div class="col-md-5">
+                <label class="form-label">Programme</label>
+                <select name="programme" class="form-select">
+                    <option value="">-- Tous --</option>
+                    {% for p in programmes %}
+                    <option value="{{ p.id }}" {% if filtre_prog == p.id|stringformat:"s" %}selected{% endif %}>
+                        {{ p.code }} - {{ p.libelle }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="bi bi-search"></i> Filtrer
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- TABLEAU -->
+<div class="card">
+    <div class="card-body">
+        <p class="text-muted">{{ activites.count }} activité(s) trouvée(s)</p>
+        
+        <table class="table table-hover">
+            <thead class="table-primary">
+                <tr>
+                    <th>Programme</th>
+                    <th>Libellé</th>
+                    <th>Objectif</th>
+                    <th>Nb sous-activités</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for a in activites %}
+                <tr>
+                    <td><span class="badge bg-primary">{{ a.programme.code }}</span></td>
+                    <td>{{ a.libelle|truncatechars:60 }}</td>
+                    <td>{{ a.objectif|truncatechars:50|default:"-" }}</td>
+                    <td>{{ a.sousactivite_set.count }}</td>
+                    <td>
+                        {% if user.is_staff or user.profil.role == 'DRETFP' %}
+                        <a href="{% url 'editer_activite' a.id %}" class="btn btn-sm btn-outline-primary">
+                            <i class="bi bi-pencil"></i>
+                        </a>
+                        <a href="{% url 'supprimer_activite' a.id %}" class="btn btn-sm btn-outline-danger">
+                            <i class="bi bi-trash"></i>
+                        </a>
+                        {% else %}
+                        <span class="text-muted small">Lecture seule</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5" class="text-center text-muted py-4">
+                        <i class="bi bi-inbox fs-1"></i>
+                        <p class="mt-2">Aucune activité</p>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
