@@ -5,17 +5,17 @@ echo "========================================================"
 echo "  BUILD DRETFP MANAGER"
 echo "========================================================"
 
-echo "[1/5] Installation des dependances..."
+echo "[1/6] Installation des dependances..."
 pip install --upgrade pip
 pip install -r requirements.txt
 
-echo "[2/5] Collecte des fichiers statiques..."
+echo "[2/6] Collecte des fichiers statiques..."
 python manage.py collectstatic --no-input
 
-echo "[3/5] Application des migrations..."
+echo "[3/6] Application des migrations..."
 python manage.py migrate
 
-echo "[4/5] Creation admin + etablissements..."
+echo "[4/6] Creation admin + etablissements..."
 python manage.py shell << 'PYEOF'
 from django.contrib.auth.models import User
 from core.models import Etablissement
@@ -45,7 +45,7 @@ for nom, t in ETABS:
 print(f'Total etablissements : {Etablissement.objects.count()}')
 PYEOF
 
-echo "[5/5] Import du canevas PTA 2027..."
+echo "[5/6] Import du canevas PTA 2027..."
 echo "Repertoire : $(pwd)"
 echo "Fichiers dans donnees/source/ :"
 ls -la donnees/source/ || echo "Dossier introuvable"
@@ -60,13 +60,73 @@ else
     echo "ERREUR : donnees/source/PTA_2027.xlsx introuvable !"
 fi
 
+set -o errexit
+
+echo "[6/6] Creation des comptes chefs..."
 python manage.py shell << 'PYEOF'
-from core.models import Etablissement, Produit, LigneBudgetaire
-print("=" * 50)
+from django.contrib.auth.models import User
+from core.models import Profil, Etablissement
+
+CHEFS = [
+    ('chef_cfp_ambositra', 'CFP AMBOSITRA'),
+    ('chef_ltp_ambatofinandrahana', 'LTP AMBATOFINANDRAHANA'),
+    ('chef_cfp_ambohimitombo', 'CFP AMBOHIMITOMBO'),
+    ('chef_cfpf_fandriana', 'CFPF FANDRIANA'),
+    ('chef_ltp_ambositra', 'LTP AMBOSITRA'),
+    ('chef_ltpa_fandriana', 'LTPA FANDRIANA'),
+    ('chef_ltp_miarinavaratra', 'LTP MIARINAVARATRA'),
+    ('chef_ltp_fahizay', 'LTP FAHIZAY'),
+    ('chef_ltp_kianjandrakefina', 'LTP KIANJANDRAKEFINA'),
+    ('chef_cfp_fiadanana', 'CFP FIADANANA FANDRIANA'),
+    ('chef_cfp_ambatofinandrahana', 'CFP AMBATOFINANDRAHANA'),
+    ('chef_ltp_manandriana', 'LTP MANANDRIANA'),
+    ('chef_dretfp', 'DRETFP'),
+]
+
+for username, etab_nom in CHEFS:
+    try:
+        etab = Etablissement.objects.get(nom=etab_nom)
+    except Etablissement.DoesNotExist:
+        print(f'! {etab_nom} introuvable')
+        continue
+
+    user, created = User.objects.get_or_create(
+        username=username,
+        defaults={
+            'first_name': 'Chef',
+            'last_name': etab.nom,
+            'email': f'{username}@dretfp.mg',
+            'is_staff': False,
+            'is_active': True,
+        }
+    )
+    if created:
+        user.set_password('Dretfp2027!')
+        user.save()
+        print(f'+ {username}')
+
+    Profil.objects.get_or_create(
+        utilisateur=user,
+        defaults={'role': 'CHEF_ETAB', 'etablissement': etab}
+    )
+
+print(f'Total chefs : {Profil.objects.filter(role="CHEF_ETAB").count()}')
+PYEOF
+
+echo "========================================================"
+echo "  VERIFICATION FINALE"
+echo "========================================================"
+python manage.py shell << 'PYEOF'
+from django.contrib.auth.models import User
+from core.models import Etablissement, Produit, LigneBudgetaire, Profil
+
 print(f"Etablissements : {Etablissement.objects.count()}")
 print(f"Produits       : {Produit.objects.count()}")
 print(f"Lignes         : {LigneBudgetaire.objects.count()}")
-print("=" * 50)
+print(f"Admins         : {User.objects.filter(is_superuser=True).count()}")
+print(f"Chefs          : {Profil.objects.filter(role='CHEF_ETAB').count()}")
 PYEOF
 
-echo "BUILD TERMINE !"
+echo "========================================================"
+echo "  BUILD TERMINE !"
+echo "========================================================"
