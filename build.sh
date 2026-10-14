@@ -5,17 +5,17 @@ echo "========================================================"
 echo "  BUILD DRETFP MANAGER"
 echo "========================================================"
 
-echo "[1/6] Installation des dependances..."
+echo "[1/7] Installation des dependances..."
 pip install --upgrade pip
 pip install -r requirements.txt
 
-echo "[2/6] Collecte des fichiers statiques..."
+echo "[2/7] Collecte des fichiers statiques..."
 python manage.py collectstatic --no-input
 
-echo "[3/6] Application des migrations..."
+echo "[3/7] Application des migrations..."
 python manage.py migrate
 
-echo "[4/6] Creation admin + etablissements..."
+echo "[4/7] Creation admin + etablissements..."
 python manage.py shell << 'PYEOF'
 from django.contrib.auth.models import User
 from core.models import Etablissement
@@ -39,13 +39,17 @@ ETABS = [
 for nom, t in ETABS:
     Etablissement.objects.get_or_create(
         nom=nom,
-        defaults={'type_etablissement': t, 'district': "Amoron'i Mania", 'region': "Amoron'i Mania"}
+        defaults={
+            'type_etablissement': t,
+            'district': "Amoron'i Mania",
+            'region': "Amoron'i Mania",
+        }
     )
 
 print(f'Total etablissements : {Etablissement.objects.count()}')
 PYEOF
 
-echo "[5/6] Import du canevas PTA 2027..."
+echo "[5/7] Import du canevas PTA 2027..."
 echo "Repertoire : $(pwd)"
 echo "Fichiers dans donnees/source/ :"
 ls -la donnees/source/ || echo "Dossier introuvable"
@@ -57,12 +61,16 @@ if [ -f "donnees/source/PTA_2027.xlsx" ]; then
     python scripts/import_pta_2027.py
     echo "Code retour import : $?"
 else
-    echo "ERREUR : donnees/source/PTA_2027.xlsx introuvable !"
+    echo "ATTENTION : donnees/source/PTA_2027.xlsx introuvable !"
 fi
 
 set -o errexit
 
-echo "[6/6] Creation des comptes chefs..."
+echo "[6/7] Ajout des filieres, matieres, salles et formateurs..."
+python scripts/ajouter_donnees_completes.py
+echo "Code retour donnees : $?"
+
+echo "[7/7] Creation des comptes chefs..."
 python manage.py shell << 'PYEOF'
 from django.contrib.auth.models import User
 from core.models import Profil, Etablissement
@@ -116,13 +124,19 @@ PYEOF
 echo "========================================================"
 echo "  VERIFICATION FINALE"
 echo "========================================================"
+
 python manage.py shell << 'PYEOF'
 from django.contrib.auth.models import User
 from core.models import Etablissement, Produit, LigneBudgetaire, Profil
+from core.models import Filiere, Matiere, Salle
 
 print(f"Etablissements : {Etablissement.objects.count()}")
+print(f"Salles         : {Salle.objects.count()}")
+print(f"Filieres       : {Filiere.objects.count()}")
+print(f"Matieres       : {Matiere.objects.count()}")
 print(f"Produits       : {Produit.objects.count()}")
 print(f"Lignes         : {LigneBudgetaire.objects.count()}")
+print(f"Formateurs     : {Profil.objects.filter(role='FORMATEUR').count()}")
 print(f"Admins         : {User.objects.filter(is_superuser=True).count()}")
 print(f"Chefs          : {Profil.objects.filter(role='CHEF_ETAB').count()}")
 PYEOF
