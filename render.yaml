@@ -15,6 +15,5 @@ services:
         value: "False"
       - key: PYTHONUNBUFFERED
         value: "1"
-      # URL de la base Neon : Render la demandera lors de la synchronisation
       - key: DATABASE_URL
         sync: false

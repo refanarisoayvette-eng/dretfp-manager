@@ -6,9 +6,13 @@ Supporte DEV (local) et PRODUCTION (Render).
 from pathlib import Path
 import os
 import dj_database_url
+from dotenv import load_dotenv  # <-- AJOUT 1
 
 # Build paths
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+# Charge le fichier .env s'il existe (pour la synchro locale avec Neon)
+load_dotenv(BASE_DIR / '.env')  # <-- AJOUT 2
 
 
 # ============================================================
@@ -97,11 +101,11 @@ WSGI_APPLICATION = 'config.wsgi.application'
 # ============================================================
 # BASE DE DONNEES
 # ============================================================
-# En local : PostgreSQL local
+# En local : PostgreSQL local (ou Neon si DATABASE_URL est dans .env)
 # Sur Render : DATABASE_URL fourni automatiquement
 
 if os.environ.get('DATABASE_URL'):
-    # PRODUCTION (Render)
+    # PRODUCTION (Render) OU LOCAL avec Neon (via .env)
     DATABASES = {
         'default': dj_database_url.config(
             default=os.environ.get('DATABASE_URL'),
@@ -110,7 +114,7 @@ if os.environ.get('DATABASE_URL'):
         )
     }
 else:
-    # LOCAL
+    # LOCAL (par défaut sans .env)
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.postgresql',
